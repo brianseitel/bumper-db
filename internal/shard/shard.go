@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -15,6 +16,8 @@ type Shard struct {
 	Filename  string
 	Handler   *os.File
 	KeyDir    map[string]KeyEntry
+
+	Mutex *sync.Mutex
 }
 
 type KeyEntry struct {
@@ -31,6 +34,7 @@ func New(dir string) *Shard {
 		Logger:    logger,
 		Directory: dir,
 		KeyDir:    make(map[string]KeyEntry),
+		Mutex:     &sync.Mutex{},
 	}
 
 	filename, err := db.getActiveFile(db.Directory)
@@ -110,4 +114,31 @@ func (s *Shard) ListKeys() []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+const deleteSequence = "[DELETED]\u0022"
+
+func (shard *Shard) Delete(key string) error {
+	timestamp := time.Now().Unix()
+
+	value := deleteSequence
+	kv := KeyValue{
+		Timestamp: timestamp,
+		Key:       key,
+		Value:     value,
+	}
+
+	sz, data := kv.Encode()
+	shard.Logger.Sugar().Infof("sz: %d", sz)
+
+	n, err := shard.Handler.Write(data)
+	if err != nil {
+		panic(err)
+	}
+	shard.Handler.Sync()
+	shard.Logger.Sugar().Infof("wrote %d bytes", n)
+
+	delete(shard.KeyDir, key)
+	shard.Handler.Seek(0, io.SeekEnd)
+	return nil
 }

@@ -16,6 +16,7 @@ type Controller struct {
 
 func (c *Controller) Register(router *mux.Router) {
 	router.HandleFunc("/v1/database/{key}", c.Get()).Methods(http.MethodGet)
+	router.HandleFunc("/v1/database/{key}", c.Delete()).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/database", c.List()).Methods(http.MethodGet)
 	router.HandleFunc("/v1/database", c.Put()).Methods(http.MethodPut)
 }
@@ -37,7 +38,14 @@ func (c *Controller) Get() http.HandlerFunc {
 
 		key, _ := vars["key"]
 
+		c.ShardDB.Mutex.Lock()
 		result := c.ShardDB.Get(key)
+		c.ShardDB.Mutex.Unlock()
+
+		if result == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
 		j, _ := json.MarshalIndent(result, "", "    ")
 
@@ -60,10 +68,26 @@ func (c *Controller) Put() http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
+		c.ShardDB.Mutex.Lock()
 		err = c.ShardDB.Set(body.Key, body.Value)
+		c.ShardDB.Mutex.Unlock()
 		if err != nil {
 			panic(err)
 		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (c *Controller) Delete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		key, _ := vars["key"]
+
+		c.ShardDB.Mutex.Lock()
+		c.ShardDB.Delete(key)
+		c.ShardDB.Mutex.Unlock()
 
 		w.WriteHeader(http.StatusOK)
 	}

@@ -5,7 +5,10 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"log"
 	"net/http"
+
+	_ "net/http/pprof"
 
 	"github.com/brianseitel/shard/internal/server"
 	"github.com/brianseitel/shard/internal/shard"
@@ -29,12 +32,15 @@ to quickly create a Cobra application.`,
 		shardDB := shard.New("./data")
 		shardDB.InitDB()
 
-		// TODO: Implement key deletion
 		// TODO: support non-strings (ints, bytes)
 		// TODO: hint files
 		// TODO: split files when hits a certain size
 		// TODO: support multiple processes
 		// TODO: implement GC to clean up deleted data from files
+
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 
 		logger, _ := zap.NewDevelopment()
 		server := server.Controller{

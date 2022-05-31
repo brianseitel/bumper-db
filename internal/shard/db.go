@@ -110,11 +110,17 @@ func (shard *Shard) initKeyDir() error {
 		kv := KeyValue{}
 		kv.Decode(data)
 
-		shard.KeyDir[kv.Key] = KeyEntry{
-			FileID:        shard.Filename,
-			ValueSize:     header.ValSize,
-			ValuePosition: pos,
-			Timestamp:     header.Timestamp,
+		shard.Logger.Sugar().Infof("key %s -> val %s", kv.Key, kv.Value)
+		// Only add it to KeyDir if it isn't deleted
+		if kv.Value != deleteSequence {
+			shard.KeyDir[kv.Key] = KeyEntry{
+				FileID:        shard.Filename,
+				ValueSize:     header.ValSize,
+				ValuePosition: pos,
+				Timestamp:     header.Timestamp,
+			}
+		} else {
+			delete(shard.KeyDir, kv.Key)
 		}
 
 		offset := 16 + int64(header.KeySize) + int64(header.ValSize)
