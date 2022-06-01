@@ -56,7 +56,7 @@ func (c *Controller) Get() http.HandlerFunc {
 
 type Request struct {
 	Key   string `json:"key"`
-	Value string `json:"value"`
+	Value any    `json:"value"`
 }
 
 func (c *Controller) Put() http.HandlerFunc {

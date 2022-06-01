@@ -1,7 +1,9 @@
 package shard
 
 import (
+	"encoding/binary"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"sync"
@@ -47,7 +49,7 @@ func New(dir string) *Shard {
 	return db
 }
 
-func (shard *Shard) Set(key string, value string) error {
+func (shard *Shard) Set(key string, value any) error {
 	timestamp := time.Now().Unix()
 
 	kv := KeyValue{
@@ -78,7 +80,7 @@ func (shard *Shard) Set(key string, value string) error {
 	return nil
 }
 
-func (s *Shard) Get(key string) string {
+func (s *Shard) Get(key string) any {
 	kv, ok := s.KeyDir[key]
 
 	if !ok {
@@ -90,18 +92,29 @@ func (s *Shard) Get(key string) string {
 	s.Handler.Seek(kv.ValuePosition, io.SeekStart)
 
 	// Load the data
-	buffserSize := 16 + len(key) + int(kv.ValueSize)
-	s.Logger.Sugar().Infof("setting buffer size: %d", buffserSize)
-	data := make([]byte, buffserSize)
+	bufferSize := 16 + len(key) + int(kv.ValueSize)
+	s.Logger.Sugar().Infof("setting buffer size: %d", bufferSize)
+	data := make([]byte, bufferSize)
 	_, err := s.Handler.Read(data)
 	if err != nil {
 		panic(err)
 	}
 
 	entry := &KeyValue{}
-	entry.Decode(data)
+	header := entry.Decode(data)
 
-	return string(entry.Value)
+	return fromBytes(entry.Value, header.ValType)
+}
+
+func float64FromBytes(bytes []byte) float64 {
+	bits := binary.LittleEndian.Uint64(bytes)
+	float := math.Float64frombits(uint64(bits))
+	return float
+}
+
+func intFromBytes(bytes []byte) int {
+	bits := binary.LittleEndian.Uint64(bytes)
+	return int(bits)
 }
 
 func (s *Shard) ListKeys() []string {
@@ -125,7 +138,7 @@ func (shard *Shard) Delete(key string) error {
 	kv := KeyValue{
 		Timestamp: timestamp,
 		Key:       key,
-		Value:     value,
+		Value:     []byte(value),
 	}
 
 	sz, data := kv.Encode()

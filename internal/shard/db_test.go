@@ -72,6 +72,27 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, "jojo", val)
 }
 
+func TestSetInteger(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := &Shard{
+		Logger:    logger,
+		Directory: "/tmp",
+		Filename:  tempFile.Name(),
+		KeyDir:    make(map[string]KeyEntry),
+	}
+
+	db.InitDB()
+	assert.NotNil(t, db.Handler)
+
+	err := db.Set("age", 29)
+	assert.Nil(t, err)
+
+	val := db.Get("age")
+
+	assert.Nil(t, err)
+	assert.Equal(t, 29, val)
+}
+
 func TestInvalidKey(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	db := &Shard{

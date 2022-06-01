@@ -16,7 +16,10 @@ func (shard *Shard) InitDB() error {
 	shard.Logger.Sugar().Infof("Initalizing DB")
 	start := time.Now()
 
-	shard.loadRawFile(shard.Filename)
+	if err := shard.loadRawFile(shard.Filename); err != nil {
+		filename := shard.createActiveFile()
+		shard.loadRawFile(filename)
+	}
 
 	shard.initKeyDir()
 	shard.Logger.Sugar().Infof("Finished initializing DB in %s", time.Since(start))

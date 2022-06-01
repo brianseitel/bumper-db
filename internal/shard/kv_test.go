@@ -1,7 +1,8 @@
 package shard
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/binary"
 	"testing"
 	"time"
 
@@ -12,12 +13,11 @@ func TestEncodeKV(t *testing.T) {
 	kv := KeyValue{
 		Timestamp: time.Now().Unix(),
 		Key:       "titties",
-		Value:     "your mom is a big fat whore",
+		Value:     []byte("your mom is a big fat whore"),
 	}
 
 	size, data := kv.Encode()
 
-	fmt.Println(size)
 	result := KeyValue{}
 	result.Decode(data)
 
@@ -25,4 +25,26 @@ func TestEncodeKV(t *testing.T) {
 	assert.Equal(t, result.Key, kv.Key)
 	assert.Equal(t, result.Value, kv.Value)
 	assert.Equal(t, result.Size, size)
+}
+
+func TestDecodeKV(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, 29.5)
+
+	kv := KeyValue{
+		Timestamp: time.Now().Unix(),
+		Key:       "age",
+		Value:     29.5,
+	}
+
+	size, data := kv.Encode()
+
+	result := KeyValue{}
+	result.Decode(data)
+
+	assert.Equal(t, kv.Timestamp, result.Timestamp)
+	assert.Equal(t, kv.Key, result.Key)
+	assert.Equal(t, 29.5, result.Value)
+	assert.Equal(t, size, result.Size)
 }
