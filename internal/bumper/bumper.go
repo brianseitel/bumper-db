@@ -1,4 +1,4 @@
-package shard
+package bumper
 
 import (
 	"encoding/binary"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Shard struct {
+type Bumper struct {
 	Logger    *zap.Logger
 	Directory string
 	Filename  string
@@ -29,10 +29,10 @@ type KeyEntry struct {
 	Timestamp     int64
 }
 
-func New(dir string) *Shard {
+func New(dir string) *Bumper {
 	logger, _ := zap.NewDevelopment()
 
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: dir,
 		KeyDir:    make(map[string]KeyEntry),
@@ -49,7 +49,7 @@ func New(dir string) *Shard {
 	return db
 }
 
-func (shard *Shard) Set(key string, value any) error {
+func (bumper *Bumper) Set(key string, value any) error {
 	timestamp := time.Now().Unix()
 
 	kv := KeyValue{
@@ -59,15 +59,15 @@ func (shard *Shard) Set(key string, value any) error {
 	}
 
 	sz, data := kv.Encode()
-	shard.Logger.Sugar().Infof("sz: %d", sz)
+	bumper.Logger.Sugar().Infof("sz: %d", sz)
 
-	pos, _ := shard.Handler.Seek(0, io.SeekEnd)
-	n, err := shard.Handler.Write(data)
+	pos, _ := bumper.Handler.Seek(0, io.SeekEnd)
+	n, err := bumper.Handler.Write(data)
 	if err != nil {
 		panic(err)
 	}
-	shard.Handler.Sync()
-	shard.Logger.Sugar().Infof("wrote %d bytes", n)
+	bumper.Handler.Sync()
+	bumper.Logger.Sugar().Infof("wrote %d bytes", n)
 
 	ke := KeyEntry{
 		Timestamp:     timestamp,
@@ -75,12 +75,12 @@ func (shard *Shard) Set(key string, value any) error {
 		ValuePosition: pos,
 	}
 
-	shard.KeyDir[key] = ke
-	shard.Handler.Seek(0, io.SeekEnd)
+	bumper.KeyDir[key] = ke
+	bumper.Handler.Seek(0, io.SeekEnd)
 	return nil
 }
 
-func (s *Shard) Get(key string) any {
+func (s *Bumper) Get(key string) any {
 	kv, ok := s.KeyDir[key]
 
 	if !ok {
@@ -117,7 +117,7 @@ func intFromBytes(bytes []byte) int {
 	return int(bits)
 }
 
-func (s *Shard) ListKeys() []string {
+func (s *Bumper) ListKeys() []string {
 	var keys []string
 
 	for key := range s.KeyDir {
@@ -131,7 +131,7 @@ func (s *Shard) ListKeys() []string {
 
 const deleteSequence = "[DELETED]\u0022"
 
-func (shard *Shard) Delete(key string) error {
+func (bumper *Bumper) Delete(key string) error {
 	timestamp := time.Now().Unix()
 
 	value := deleteSequence
@@ -142,16 +142,16 @@ func (shard *Shard) Delete(key string) error {
 	}
 
 	sz, data := kv.Encode()
-	shard.Logger.Sugar().Infof("sz: %d", sz)
+	bumper.Logger.Sugar().Infof("sz: %d", sz)
 
-	n, err := shard.Handler.Write(data)
+	n, err := bumper.Handler.Write(data)
 	if err != nil {
 		panic(err)
 	}
-	shard.Handler.Sync()
-	shard.Logger.Sugar().Infof("wrote %d bytes", n)
+	bumper.Handler.Sync()
+	bumper.Logger.Sugar().Infof("wrote %d bytes", n)
 
-	delete(shard.KeyDir, key)
-	shard.Handler.Seek(0, io.SeekEnd)
+	delete(bumper.KeyDir, key)
+	bumper.Handler.Seek(0, io.SeekEnd)
 	return nil
 }

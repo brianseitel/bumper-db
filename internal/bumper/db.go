@@ -1,4 +1,4 @@
-package shard
+package bumper
 
 import (
 	"errors"
@@ -12,28 +12,28 @@ import (
 	"time"
 )
 
-func (shard *Shard) InitDB() error {
-	shard.Logger.Sugar().Infof("Initalizing DB")
+func (bumper *Bumper) InitDB() error {
+	bumper.Logger.Sugar().Infof("Initalizing DB")
 	start := time.Now()
 
-	if err := shard.loadRawFile(shard.Filename); err != nil {
-		filename := shard.createActiveFile()
-		shard.loadRawFile(filename)
+	if err := bumper.loadRawFile(bumper.Filename); err != nil {
+		filename := bumper.createActiveFile()
+		bumper.loadRawFile(filename)
 	}
 
-	shard.initKeyDir()
-	shard.Logger.Sugar().Infof("Finished initializing DB in %s", time.Since(start))
+	bumper.initKeyDir()
+	bumper.Logger.Sugar().Infof("Finished initializing DB in %s", time.Since(start))
 
 	return nil
 }
 
-func (shard *Shard) getDataDirectory() string {
+func (bumper *Bumper) getDataDirectory() string {
 	wd, _ := os.Getwd()
 	wd = wd + "/../../data"
 	return wd
 }
 
-func (shard *Shard) getActiveFile(dir string) (string, error) {
+func (bumper *Bumper) getActiveFile(dir string) (string, error) {
 	files, err := filepath.Glob(fmt.Sprintf("%s/*.db", dir))
 	if err != nil {
 		panic(err)
@@ -61,8 +61,8 @@ func (shard *Shard) getActiveFile(dir string) (string, error) {
 	return latest, nil
 }
 
-func (shard *Shard) createActiveFile() string {
-	files, err := filepath.Glob(fmt.Sprintf("%s/*.db", shard.Directory))
+func (bumper *Bumper) createActiveFile() string {
+	files, err := filepath.Glob(fmt.Sprintf("%s/*.db", bumper.Directory))
 	if err != nil {
 		panic(err)
 	}
@@ -87,21 +87,21 @@ func (shard *Shard) createActiveFile() string {
 	}
 
 	filename := fmt.Sprintf("%d.db", highest)
-	os.Create(fmt.Sprintf("%s/%s", shard.Directory, filename))
+	os.Create(fmt.Sprintf("%s/%s", bumper.Directory, filename))
 
 	return filename
 }
 
-func (shard *Shard) initKeyDir() error {
-	pos, _ := shard.Handler.Seek(0, io.SeekEnd)
+func (bumper *Bumper) initKeyDir() error {
+	pos, _ := bumper.Handler.Seek(0, io.SeekEnd)
 
-	pos, _ = shard.Handler.Seek(0, io.SeekStart)
-	shard.Logger.Sugar().Infof("setting offset to %d", pos)
-	shard.Handler.Seek(pos, io.SeekStart)
+	pos, _ = bumper.Handler.Seek(0, io.SeekStart)
+	bumper.Logger.Sugar().Infof("setting offset to %d", pos)
+	bumper.Handler.Seek(pos, io.SeekStart)
 	for {
-		shard.Logger.Sugar().Infof("loading %d bytes", HeaderSize)
+		bumper.Logger.Sugar().Infof("loading %d bytes", HeaderSize)
 		data := make([]byte, HeaderSize)
-		_, err := shard.Handler.ReadAt(data, pos)
+		_, err := bumper.Handler.ReadAt(data, pos)
 		if err != nil {
 			break
 		}
@@ -109,45 +109,45 @@ func (shard *Shard) initKeyDir() error {
 		header.Decode(data)
 
 		data = make([]byte, HeaderSize+header.KeySize+header.ValSize)
-		shard.Handler.ReadAt(data, pos)
+		bumper.Handler.ReadAt(data, pos)
 
 		kv := KeyValue{}
 		kv.Decode(data)
 
-		shard.Logger.Sugar().Infof("key %s -> val %s", kv.Key, kv.Value)
+		bumper.Logger.Sugar().Infof("key %s -> val %s", kv.Key, kv.Value)
 		// Only add it to KeyDir if it isn't deleted
 		if kv.Value != deleteSequence {
-			shard.KeyDir[kv.Key] = KeyEntry{
-				FileID:        shard.Filename,
+			bumper.KeyDir[kv.Key] = KeyEntry{
+				FileID:        bumper.Filename,
 				ValueSize:     header.ValSize,
 				ValuePosition: pos,
 				Timestamp:     header.Timestamp,
 			}
 		} else {
-			delete(shard.KeyDir, kv.Key)
+			delete(bumper.KeyDir, kv.Key)
 		}
 
 		offset := HeaderSize + int64(header.KeySize) + int64(header.ValSize)
 
-		shard.Logger.Sugar().Infof("last offset: %d", pos)
-		pos, _ = shard.Handler.Seek(offset, io.SeekCurrent)
-		shard.Logger.Sugar().Infof("current offset: %d", pos)
+		bumper.Logger.Sugar().Infof("last offset: %d", pos)
+		pos, _ = bumper.Handler.Seek(offset, io.SeekCurrent)
+		bumper.Logger.Sugar().Infof("current offset: %d", pos)
 	}
 
 	return nil
 }
 
-func (shard *Shard) loadRawFile(file string) error {
-	f, err := os.OpenFile(fmt.Sprintf("%s/%s", shard.Directory, file), os.O_RDWR, fs.ModeAppend)
+func (bumper *Bumper) loadRawFile(file string) error {
+	f, err := os.OpenFile(fmt.Sprintf("%s/%s", bumper.Directory, file), os.O_RDWR, fs.ModeAppend)
 	if err != nil {
 		return err
 	}
 
-	shard.Logger.Sugar().Infof("loaded file %s", file)
-	shard.Handler = f
+	bumper.Logger.Sugar().Infof("loaded file %s", file)
+	bumper.Handler = f
 	return nil
 }
 
-func (shard *Shard) Close() error {
-	return shard.Handler.Close()
+func (bumper *Bumper) Close() error {
+	return bumper.Handler.Close()
 }

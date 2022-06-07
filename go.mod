@@ -1,4 +1,4 @@
-module github.com/brianseitel/shard
+module github.com/brianseitel/bumper
 
 go 1.18
 

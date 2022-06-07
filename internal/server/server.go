@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/brianseitel/shard/internal/shard"
+	"github.com/brianseitel/bumper/internal/bumper"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 
 type Controller struct {
-	Logger  *zap.Logger
-	ShardDB *shard.Shard
+	Logger   *zap.Logger
+	BumperDB *bumper.Bumper
 }
 
 func (c *Controller) Register(router *mux.Router) {
@@ -23,7 +23,7 @@ func (c *Controller) Register(router *mux.Router) {
 
 func (c *Controller) List() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		result := c.ShardDB.ListKeys()
+		result := c.BumperDB.ListKeys()
 
 		j, _ := json.MarshalIndent(result, "", "    ")
 
@@ -38,9 +38,9 @@ func (c *Controller) Get() http.HandlerFunc {
 
 		key, _ := vars["key"]
 
-		c.ShardDB.Mutex.Lock()
-		result := c.ShardDB.Get(key)
-		c.ShardDB.Mutex.Unlock()
+		c.BumperDB.Mutex.Lock()
+		result := c.BumperDB.Get(key)
+		c.BumperDB.Mutex.Unlock()
 
 		if result == "" {
 			w.WriteHeader(http.StatusNotFound)
@@ -68,9 +68,9 @@ func (c *Controller) Put() http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		c.ShardDB.Mutex.Lock()
-		err = c.ShardDB.Set(body.Key, body.Value)
-		c.ShardDB.Mutex.Unlock()
+		c.BumperDB.Mutex.Lock()
+		err = c.BumperDB.Set(body.Key, body.Value)
+		c.BumperDB.Mutex.Unlock()
 		if err != nil {
 			panic(err)
 		}
@@ -85,9 +85,9 @@ func (c *Controller) Delete() http.HandlerFunc {
 
 		key, _ := vars["key"]
 
-		c.ShardDB.Mutex.Lock()
-		c.ShardDB.Delete(key)
-		c.ShardDB.Mutex.Unlock()
+		c.BumperDB.Mutex.Lock()
+		c.BumperDB.Delete(key)
+		c.BumperDB.Mutex.Unlock()
 
 		w.WriteHeader(http.StatusOK)
 	}

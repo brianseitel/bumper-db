@@ -1,4 +1,4 @@
-package shard
+package bumper
 
 import (
 	"bytes"

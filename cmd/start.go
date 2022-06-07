@@ -7,8 +7,8 @@ package cmd
 import (
 	"net/http"
 
-	"github.com/brianseitel/shard/internal/server"
-	"github.com/brianseitel/shard/internal/shard"
+	"github.com/brianseitel/bumper/internal/bumper"
+	"github.com/brianseitel/bumper/internal/server"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/urfave/negroni"
@@ -21,8 +21,8 @@ var startCmd = &cobra.Command{
 	Short: "Start the database server",
 	Long:  `Starts the database server on port 8080.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		shardDB := shard.New("./data")
-		shardDB.InitDB()
+		bumperDB := bumper.New("./data")
+		bumperDB.InitDB()
 
 		// TODO: hint files
 		// TODO: split files when hits a certain size
@@ -32,8 +32,8 @@ var startCmd = &cobra.Command{
 		logger, _ := zap.NewDevelopment()
 		logger = zap.NewNop()
 		server := server.Controller{
-			Logger:  logger,
-			ShardDB: shardDB,
+			Logger:   logger,
+			BumperDB: bumperDB,
 		}
 
 		router := mux.NewRouter()

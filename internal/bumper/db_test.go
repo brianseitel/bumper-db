@@ -1,4 +1,4 @@
-package shard
+package bumper
 
 import (
 	"fmt"
@@ -40,20 +40,20 @@ func tearDown() {
 }
 
 func TestInitDB(t *testing.T) {
-	shard := Shard{
+	bumper := Bumper{
 		Logger:    zap.NewNop(),
 		Directory: "/tmp",
 		Filename:  tempFile.Name(),
 	}
 
-	err := shard.InitDB()
+	err := bumper.InitDB()
 
 	assert.Nil(t, err)
 }
 
 func TestSet(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "/tmp",
 		Filename:  tempFile.Name(),
@@ -74,7 +74,7 @@ func TestSet(t *testing.T) {
 
 func TestSetInteger(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "/tmp",
 		Filename:  tempFile.Name(),
@@ -95,7 +95,7 @@ func TestSetInteger(t *testing.T) {
 
 func TestInvalidKey(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "/tmp",
 		Filename:  tempFile.Name(),
@@ -110,7 +110,7 @@ func TestInvalidKey(t *testing.T) {
 
 func TestPersistence(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "/tmp",
 		Filename:  tempFile.Name(),
@@ -132,7 +132,7 @@ func TestPersistence(t *testing.T) {
 
 func TestGetActiveFile(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "",
 		Filename:  tempFile.Name(),
@@ -147,7 +147,7 @@ func TestGetActiveFile(t *testing.T) {
 
 func TestCreateActiveFile(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	db := &Shard{
+	db := &Bumper{
 		Logger:    logger,
 		Directory: "",
 		Filename:  tempFile.Name(),
