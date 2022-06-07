@@ -99,7 +99,8 @@ func (shard *Shard) initKeyDir() error {
 	shard.Logger.Sugar().Infof("setting offset to %d", pos)
 	shard.Handler.Seek(pos, io.SeekStart)
 	for {
-		data := make([]byte, 16)
+		shard.Logger.Sugar().Infof("loading %d bytes", HeaderSize)
+		data := make([]byte, HeaderSize)
 		_, err := shard.Handler.ReadAt(data, pos)
 		if err != nil {
 			break
@@ -107,7 +108,7 @@ func (shard *Shard) initKeyDir() error {
 		header := Header{}
 		header.Decode(data)
 
-		data = make([]byte, 16+header.KeySize+header.ValSize)
+		data = make([]byte, HeaderSize+header.KeySize+header.ValSize)
 		shard.Handler.ReadAt(data, pos)
 
 		kv := KeyValue{}
@@ -126,7 +127,7 @@ func (shard *Shard) initKeyDir() error {
 			delete(shard.KeyDir, kv.Key)
 		}
 
-		offset := 16 + int64(header.KeySize) + int64(header.ValSize)
+		offset := HeaderSize + int64(header.KeySize) + int64(header.ValSize)
 
 		shard.Logger.Sugar().Infof("last offset: %d", pos)
 		pos, _ = shard.Handler.Seek(offset, io.SeekCurrent)

@@ -5,10 +5,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"log"
 	"net/http"
-
-	_ "net/http/pprof"
 
 	"github.com/brianseitel/shard/internal/server"
 	"github.com/brianseitel/shard/internal/shard"
@@ -21,28 +18,19 @@ import (
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Start the database server",
+	Long:  `Starts the database server on port 8080.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		shardDB := shard.New("./data")
 		shardDB.InitDB()
 
-		// TODO: support non-strings (ints, bytes)
 		// TODO: hint files
 		// TODO: split files when hits a certain size
 		// TODO: support multiple processes
 		// TODO: implement GC to clean up deleted data from files
 
-		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
-		}()
-
 		logger, _ := zap.NewDevelopment()
+		logger = zap.NewNop()
 		server := server.Controller{
 			Logger:  logger,
 			ShardDB: shardDB,

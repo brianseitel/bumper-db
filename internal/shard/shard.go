@@ -92,7 +92,7 @@ func (s *Shard) Get(key string) any {
 	s.Handler.Seek(kv.ValuePosition, io.SeekStart)
 
 	// Load the data
-	bufferSize := 16 + len(key) + int(kv.ValueSize)
+	bufferSize := HeaderSize + len(key) + int(kv.ValueSize)
 	s.Logger.Sugar().Infof("setting buffer size: %d", bufferSize)
 	data := make([]byte, bufferSize)
 	_, err := s.Handler.Read(data)

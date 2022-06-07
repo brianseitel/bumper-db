@@ -4,5 +4,9 @@ export const options = {
   duration: '30s',
 };
 export default function () {
-  http.get('http://localhost:8080/v1/database/butt');
+  // http.put('http://localhost:8080/v1/database', `{
+  //   "key": "age",
+  //   "value": "yo momma"
+  // }`);
+  http.get('http://localhost:8080/v1/database/age');
 }

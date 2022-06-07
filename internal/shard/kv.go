@@ -34,7 +34,6 @@ func (h Header) Encode() []byte {
 
 func (h *Header) Decode(data []byte) {
 	reader := bytes.NewReader(data)
-
 	ts := make([]byte, 8)
 	_, err := reader.ReadAt(ts, 0)
 	if err != nil {
