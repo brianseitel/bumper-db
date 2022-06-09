@@ -24,7 +24,6 @@ var startCmd = &cobra.Command{
 		bumperDB := bumper.New("./data")
 		bumperDB.InitDB()
 
-		// TODO: hint files
 		// TODO: split files when hits a certain size
 		// TODO: support multiple processes
 		// TODO: implement GC to clean up deleted data from files

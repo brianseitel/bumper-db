@@ -21,8 +21,31 @@ func (bumper *Bumper) InitDB() error {
 		bumper.loadRawFile(filename)
 	}
 
-	bumper.initKeyDir()
+	loader := HintLoader{
+		Logger:    bumper.Logger,
+		Directory: bumper.Directory,
+	}
+
+	hints := loader.Load(bumper.Filename)
+
+	err := bumper.loadHints(bumper.Filename, hints)
+	if err != nil {
+		bumper.initKeyDir()
+	}
+
 	bumper.Logger.Sugar().Infof("Finished initializing DB in %s", time.Since(start))
+	return nil
+}
+
+func (bumper *Bumper) loadHints(filename string, hints []Hint) error {
+	for _, hint := range hints {
+		bumper.KeyDir[hint.Key] = KeyEntry{
+			FileID:        filename,
+			ValueSize:     hint.ValueSize,
+			ValuePosition: hint.ValuePos,
+			Timestamp:     hint.Timestamp,
+		}
+	}
 
 	return nil
 }
@@ -87,6 +110,35 @@ func (bumper *Bumper) createActiveFile() string {
 	}
 
 	filename := fmt.Sprintf("%d.db", highest)
+	os.Create(fmt.Sprintf("%s/%s", bumper.Directory, filename))
+
+	return filename
+}
+
+func (bumper *Bumper) createHintFile() string {
+	files, err := filepath.Glob(fmt.Sprintf("%s/*.db", bumper.Directory))
+	if err != nil {
+		panic(err)
+	}
+
+	highest := 0
+	for _, file := range files {
+		slashIdx := strings.LastIndex(file, "/")
+		dbIdx := strings.LastIndex(file, ".db")
+
+		numString := file[slashIdx+1 : dbIdx]
+
+		num, _ := strconv.Atoi(numString)
+		if num > highest {
+			highest = num
+		}
+	}
+
+	if highest == 0 {
+		highest = 1
+	}
+
+	filename := fmt.Sprintf("%d.hint", highest)
 	os.Create(fmt.Sprintf("%s/%s", bumper.Directory, filename))
 
 	return filename
